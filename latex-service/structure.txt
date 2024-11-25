@@ -1,0 +1,17 @@
+latex-service/
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── .env.example
+├── README.md
+├── scripts/
+│   └── install_texlive.sh
+└── app/
+    ├── __init__.py
+    ├── main.py
+    ├── config.py
+    ├── storage.py
+    ├── latex_compiler.py
+    └── api/
+        ├── __init__.py
+        └── routes.py
