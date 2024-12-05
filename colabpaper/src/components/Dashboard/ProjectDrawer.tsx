@@ -1,53 +1,200 @@
-'use client'
-import React, { useState } from 'react'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table'
-import Search from '../ui/search'
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button } from '../ui/button';
+import { MoreHorizontal, File, Share2, Archive, Trash2 } from 'lucide-react';
+import { useToast } from '../ui/use-toast';
+import { Project } from '@/types/database.types';
 
 interface ProjectDrawerProps {
-    drawerName: string
+    drawerName: string;
+    searchFilter?: string;
 }
 
-const ProjectDrawer = (props: ProjectDrawerProps) => {
-    const [searchField, setSearchField] = useState<string>('')
+const ProjectDrawer: React.FC<ProjectDrawerProps> = ({ drawerName, searchFilter = '' }) => {
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const router = useRouter();
+    const { toast } = useToast();
 
-    const onSearchChange = (searchText: string) => {
-        setSearchField(searchText)
+    const fetchProjects = async () => {
+        try {
+            const response = await fetch(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/projects`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch projects');
+            }
+            const data = await response.json();
+            setProjects(data.data);
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to load projects",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchProjects();
+    }, []);
+
+    const handleProjectClick = (projectId: string) => {
+        router.push(`/project/${projectId}`);
+    };
+
+    const handleArchiveProject = async (projectId: string) => {
+        try {
+            const response = await fetch(`/api/v1/projects/${projectId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: 'archived'
+                }),
+            });
+
+            if (!response.ok) throw new Error('Failed to archive project');
+
+            toast({
+                title: "Success",
+                description: "Project archived successfully",
+            });
+
+            fetchProjects(); // Refresh the list
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to archive project",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleDeleteProject = async (projectId: string) => {
+        try {
+            const response = await fetch(`/api/v1/projects/${projectId}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) throw new Error('Failed to delete project');
+
+            toast({
+                title: "Success",
+                description: "Project deleted successfully",
+            });
+
+            fetchProjects(); // Refresh the list
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to delete project",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const filteredProjects = projects.filter(project =>
+        project.name.toLowerCase().includes(searchFilter.toLowerCase())
+    );
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center p-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+        );
     }
 
     return (
-        <div className="card-row w-full h-full p-4">
-            <div className="flex flex-row justify-start items-start flex-wrap w-full m-0 h-[50px]">
-                <span className='text-2xl'>{props.drawerName}</span>
-            </div>
-            <div className="flex flex-row justify-start items-start flex-wrap w-full m-0 h-[50px]">
-                <div className="w-full">
-                    <Search onSearchChange={onSearchChange} searchText={searchField} />
-                </div>
-            </div>
-            <div className="container-inset flex flex-row justify-start items-start flex-wrap w-full m-0 h-[calc(100%-100px)] border border-solid border-zinc-400 rounded-sm">
-                <div className="h-full w-full overflow-x-hidden">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Title</TableHead>
-                                <TableHead>Owner</TableHead>
-                                <TableHead className="w-[100px]">Last Modified</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow>
-                                <TableCell className="font-medium">INV001</TableCell>
-                                <TableCell>Paid</TableCell>
-                                <TableCell>Credit Card</TableCell>
-                                <TableCell className="text-right">$250.00</TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </div>
-            </div>
+        <div className="rounded-md border">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Owner</TableHead>
+                        <TableHead>Last Modified</TableHead>
+                        <TableHead className="w-[70px]"></TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {filteredProjects.map((project) => (
+                        <TableRow
+                            key={project.id}
+                            className="cursor-pointer"
+                            onClick={() => handleProjectClick(project.id)}
+                        >
+                            <TableCell>
+                                <div className="flex items-center space-x-2">
+                                    <File className="h-4 w-4 text-muted-foreground" />
+                                    <span>{project.name}</span>
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                {project.owner && (
+                                    `${project.owner.first_name} ${project.owner.last_name}`
+                                )}
+                            </TableCell>
+                            <TableCell>
+                                {new Date(project.updated_at).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                        <Button variant="ghost" size="icon">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                            <span className="sr-only">Open menu</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={(e) => {
+                                            e.stopPropagation();
+                                            router.push(`/project/${project.id}/share`);
+                                        }}>
+                                            <Share2 className="h-4 w-4 mr-2" />
+                                            Share
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleArchiveProject(project.id);
+                                        }}>
+                                            <Archive className="h-4 w-4 mr-2" />
+                                            Archive
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            className="text-destructive"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteProject(project.id);
+                                            }}
+                                        >
+                                            <Trash2 className="h-4 w-4 mr-2" />
+                                            Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                    {filteredProjects.length === 0 && (
+                        <TableRow>
+                            <TableCell colSpan={4} className="text-center text-muted-foreground">
+                                No projects found
+                            </TableCell>
+                        </TableRow>
+                    )}
+                </TableBody>
+            </Table>
         </div>
-    )
-}
+    );
+};
 
-export default ProjectDrawer
+export default ProjectDrawer;

@@ -8,9 +8,6 @@ import { Button } from "@/components/ui/button/index";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
     Loader2,
     Upload,
@@ -28,6 +25,8 @@ import { useImageUpload } from '@/hooks/useImageUpload';
 import CreateFileDialog from '@/components/Editor/CreateFileDialog';
 import { FileTypeKey } from '@/types';
 import { LATEX_FILE_TYPES } from '@/constants/latex.constants';
+import { ThemeSelector } from '@/components/Editor/ThemeSelector';
+import { useEditor } from '@/context/EditorContext';
 
 // Dynamically import components
 const PDFViewer = dynamic(() => import('@/components/Editor/PDFViewer'), { ssr: false });
@@ -54,6 +53,9 @@ export interface FolderStructure {
 }
 
 const Project: React.FC = () => {
+    // Context
+    const { applyTheme } = useEditor();
+
     // State Management
     const [latexContent, setLatexContent] = useState<string>('');
     const [pdfUrl, setPdfUrl] = useState<string>('');
@@ -691,15 +693,31 @@ const Project: React.FC = () => {
                 <ResizableHandle withHandle />
                 <ResizablePanel defaultSize={80}>
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-                        <div className="border-b px-4">
-                            <TabsList>
-                                <TabsTrigger value="editor">Editor</TabsTrigger>
-                                <TabsTrigger value="preview">Preview</TabsTrigger>
-                            </TabsList>
+                        <div className="flex justify-between items-center border-b px-4 py-1">
+                            <Button
+                                onClick={handleCompile}
+                                disabled={isCompiling}
+                            >
+                                {isCompiling ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Compiling...
+                                    </>
+                                ) : (
+                                    'Compile'
+                                )}
+                            </Button>
+                            <div className='flex flex-row'>
+                                <ThemeSelector onThemeChange={applyTheme} />
+                                <TabsList>
+                                    <TabsTrigger value="editor">Editor</TabsTrigger>
+                                    <TabsTrigger value="preview">Preview</TabsTrigger>
+                                </TabsList>
+                            </div>
                         </div>
                         <div className="flex-1 overflow-hidden">
                             <TabsContent value="editor" className="h-full m-0">
-                                <div className="h-full flex flex-col p-4">
+                                <div className="h-full flex flex-col p-0">
                                     {selectedFile?.type === 'cls' ? (
                                         <>
                                             <div className="flex justify-between items-center mb-4">
@@ -724,22 +742,6 @@ const Project: React.FC = () => {
                                                 value={latexContent}
                                                 onChange={setLatexContent}
                                             />
-                                            <div className="mt-4">
-                                                <Button
-                                                    onClick={handleCompile}
-                                                    disabled={isCompiling}
-                                                    className="w-full"
-                                                >
-                                                    {isCompiling ? (
-                                                        <>
-                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                            Compiling...
-                                                        </>
-                                                    ) : (
-                                                        'Compile LaTeX'
-                                                    )}
-                                                </Button>
-                                            </div>
                                         </>
                                     )}
                                 </div>

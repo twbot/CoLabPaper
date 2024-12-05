@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Confirm your email</title>
+</head>
+
+<body style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
+    <div style="background-color: #f9f9f9; padding: 20px; border-radius: 5px;">
+        <h2 style="color: #333; margin-bottom: 20px;">Confirm your email address</h2>
+        <p style="color: #666; line-height: 1.5;">
+            Thanks for signing up for CoLabPaper! Please confirm your email address by clicking the button below.
+        </p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{ .SiteURL }}/api/v1/auth/confirm?token_hash={{ .TokenHash }}&type=email&next={{ .RedirectTo }}"
+                style="background-color: #0070f3; color: white; padding: 12px 24px; 
+                      text-decoration: none; border-radius: 5px; display: inline-block;">
+                Confirm Email Address
+            </a>
+        </div>
+        <p style="color: #666; line-height: 1.5;">
+            If you didn't create an account with CoLabPaper, you can safely ignore this email.
+        </p>
+    </div>
+</body>
+
+</html>

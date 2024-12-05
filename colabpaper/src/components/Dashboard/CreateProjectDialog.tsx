@@ -1,26 +1,27 @@
+'use client'
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button/index";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
-
-const CreateProjectDialog = ({
-  isOpen,
-  onOpenChange
-}: {
-  isOpen: boolean;
+interface CreateProjectDialogProps {
+  isOpen: boolean
   onOpenChange: (open: boolean) => void;
-}) => {
+}
+
+const CreateProjectDialog = (props: CreateProjectDialogProps) => {
   const [projectName, setProjectName] = React.useState('');
   const [isCreating, setIsCreating] = React.useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
+  // src/components/Dashboard/CreateProjectDialog.tsx
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!projectName.trim()) {
       toast({
         title: "Error",
@@ -32,31 +33,46 @@ const CreateProjectDialog = ({
 
     setIsCreating(true);
     try {
-      // TODO: Replace with your actual API endpoint
-      const response = await fetch('/api/projects', {
+      // Add auth headers
+      const response = await fetch(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/projects`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Add this line
         body: JSON.stringify({
-          name: projectName,
-          status: 'active'
+          name: projectName.trim()
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to create project');
+      if (response.status === 401) {
+        // Handle unauthorized explicitly
+        toast({
+          title: "Error",
+          description: "Session expired. Please sign in again.",
+          variant: "destructive",
+        });
+        // Optionally redirect to login
+        window.location.href = '/signin';
+        return;
       }
 
-      const project = await response.json();
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create project');
+      }
+
+      const { data: project } = await response.json();
 
       toast({
         title: "Success",
         description: "Project created successfully",
       });
 
-      onOpenChange(false);
+      props.onOpenChange(false);
       router.push(`/project/${project.id}`);
+      router.refresh();
+
     } catch (error) {
       toast({
         title: "Error",
@@ -69,7 +85,7 @@ const CreateProjectDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={props.isOpen} onOpenChange={props.onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create New Project</DialogTitle>
@@ -77,31 +93,40 @@ const CreateProjectDialog = ({
             Create a new research project. You can add references and content later.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="projectName">Project Name</Label>
-            <Input
-              id="projectName"
-              placeholder="Enter project name"
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              disabled={isCreating}
-            />
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="projectName">Project Name</Label>
+              <Input
+                id="projectName"
+                placeholder="Enter project name"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                disabled={isCreating}
+                required
+              />
+            </div>
           </div>
-          <div className="flex justify-end space-x-2">
+          <DialogFooter>
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => props.onOpenChange(false)}
               disabled={isCreating}
             >
               Cancel
             </Button>
             <Button type="submit" disabled={isCreating}>
-              {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Project
+              {isCreating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Project'
+              )}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

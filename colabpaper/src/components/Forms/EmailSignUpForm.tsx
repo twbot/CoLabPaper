@@ -1,4 +1,6 @@
+// src/components/Forms/EmailSignUpForm.tsx
 'use client'
+
 import React, { useMemo, useState } from 'react'
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -7,12 +9,7 @@ import { SubmitButton } from '@/components/ui/button/submit'
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../ui/form'
 import { Input } from '../ui/input'
 import { EmailAndProfileSignUpSchema } from '@/types'
-import { redirect } from 'next/navigation'
 import { getSVGFromName } from '@/components/Icons'
-import resolveConfig from 'tailwindcss/resolveConfig'
-import tailwindConfig from '@/tailwindconfig'
-
-const fullConfig = resolveConfig(tailwindConfig)
 
 interface EmailSignUpFormProps {
     action: (values: z.infer<typeof EmailAndProfileSignUpSchema>) => Promise<never>
@@ -21,8 +18,6 @@ interface EmailSignUpFormProps {
 }
 
 const EmailSignUpForm = (props: EmailSignUpFormProps) => {
-
-    // state
     const [showPassword, setShowPassword] = useState<boolean>(false)
     const form = useForm<z.infer<typeof EmailAndProfileSignUpSchema>>({
         resolver: zodResolver(EmailAndProfileSignUpSchema),
@@ -44,26 +39,25 @@ const EmailSignUpForm = (props: EmailSignUpFormProps) => {
             await props.action(values)
         } catch (error) {
             console.error("Error signing up:", error)
-            //TODO: Handle any error scenario
         }
     }
 
-    console.log(fullConfig.theme)
-    console.log(fullConfig.darkMode)
-    // SVGs
     const eyeSVG = useMemo(() => {
-        return getSVGFromName('Eye', { "aria-label": 'View Password', fillcolor: '#000' })
+        return getSVGFromName('Eye', { "aria-label": 'View Password', fillcolor: 'currentColor' })
     }, [])
+
     const hideEyeSVG = useMemo(() => {
-        return getSVGFromName('HideEye', { "aria-label": 'Hide Password', fillcolor: '#000' })
+        return getSVGFromName('HideEye', { "aria-label": 'Hide Password', fillcolor: 'currentColor' })
     }, [])
 
     return (
         <div className="w-full flex flex-col justify-center items-center align-middle gap-2">
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="w-3/4 md:w-1/2 animate-in flex flex-col justify-center items-center gap-2 text-foreground">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="w-3/4 md:w-1/2 animate-in flex flex-col justify-center items-center gap-2">
                     <div className="flex flex-col justify-center items-center mb-2 mt-8">
-                        <span className="text-primary font-extrabold text-2xl lg:text-3xl">{props.formHeaderMessage}</span>
+                        <span className="text-foreground font-extrabold text-2xl lg:text-3xl">
+                            {props.formHeaderMessage}
+                        </span>
                     </div>
                     <div className='w-full'>
                         <FormField
@@ -72,7 +66,11 @@ const EmailSignUpForm = (props: EmailSignUpFormProps) => {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormControl>
-                                        <Input placeholder="Email" {...field} />
+                                        <Input
+                                            placeholder="Email"
+                                            className="bg-background border-input"
+                                            {...field}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -87,7 +85,11 @@ const EmailSignUpForm = (props: EmailSignUpFormProps) => {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormControl>
-                                            <Input placeholder="First Name" {...field} />
+                                            <Input
+                                                placeholder="First Name"
+                                                className="bg-background border-input"
+                                                {...field}
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -101,7 +103,11 @@ const EmailSignUpForm = (props: EmailSignUpFormProps) => {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormControl>
-                                            <Input placeholder="Last Name" {...field} />
+                                            <Input
+                                                placeholder="Last Name"
+                                                className="bg-background border-input"
+                                                {...field}
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -116,7 +122,11 @@ const EmailSignUpForm = (props: EmailSignUpFormProps) => {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormControl>
-                                        <Input placeholder="Username" {...field} />
+                                        <Input
+                                            placeholder="Username"
+                                            className="bg-background border-input"
+                                            {...field}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -134,10 +144,11 @@ const EmailSignUpForm = (props: EmailSignUpFormProps) => {
                                             <Input
                                                 type={showPassword ? "text" : "password"}
                                                 placeholder="Enter your password"
+                                                className="bg-background border-input"
                                                 {...field}
                                             />
                                             <div
-                                                className='flex flex-row justify-center align-middle items-center w-[30px] h-[30px] cursor-pointer px-[2px]'
+                                                className='flex flex-row justify-center align-middle items-center w-[30px] h-[30px] cursor-pointer px-[2px] text-muted-foreground hover:text-foreground transition-colors'
                                                 onClick={toggleShowPassword}
                                             >
                                                 {showPassword ? eyeSVG : hideEyeSVG}
@@ -149,9 +160,8 @@ const EmailSignUpForm = (props: EmailSignUpFormProps) => {
                             )}
                         />
                     </div>
-                    {/* TODO: Update button color when color scheme is finalized */}
                     <SubmitButton
-                        className="bg-slate-700 rounded-md px-4 py-2 text-primary-foreground mb-2 text-md hover:bg-accent/80 w-full"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md px-4 py-2 mb-2 text-md w-full"
                     >
                         {props.formButtonMessage}
                     </SubmitButton>

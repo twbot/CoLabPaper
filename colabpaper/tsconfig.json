@@ -56,6 +56,9 @@
       "@/types/*": [
         "./src/shared/types/*"
       ],
+      "@/actions/*": [
+        "./src/shared/actions/*"
+      ],
       "@/config/*": [
         "./src/config/*"
       ],

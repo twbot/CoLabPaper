@@ -1,4 +1,6 @@
+// src/components/Forms/EmailAuthForm.tsx
 'use client'
+
 import React, { useState, useMemo } from 'react'
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -16,8 +18,6 @@ interface EmailAuthFormProps {
 }
 
 const EmailAuthForm = (props: EmailAuthFormProps) => {
-
-    // state
     const [showPassword, setShowPassword] = useState<boolean>(false)
     const form = useForm<z.infer<typeof EmailSignInFormSchema>>({
         resolver: zodResolver(EmailSignInFormSchema),
@@ -36,24 +36,23 @@ const EmailAuthForm = (props: EmailAuthFormProps) => {
             await props.action(values)
         } catch (error) {
             console.error("Error signing up:", error)
-            //TODO: Handle any error scenario
         }
     }
 
-    // SVGs
     const eyeSVG = useMemo(() => {
-        return getSVGFromName('Eye', { "aria-label": 'View Password', fillcolor: '#000' })
+        return getSVGFromName('Eye', { "aria-label": 'View Password', fillcolor: 'currentColor' })
     }, [])
+
     const hideEyeSVG = useMemo(() => {
-        return getSVGFromName('HideEye', { "aria-label": 'Hide Password', fillcolor: '#000' })
+        return getSVGFromName('HideEye', { "aria-label": 'Hide Password', fillcolor: 'currentColor' })
     }, [])
 
     return (
         <div className="w-full flex flex-col justify-center items-center align-middle gap-2">
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="w-3/4 md:w-1/2 animate-in flex flex-col justify-center items-center gap-2 text-foreground">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="w-3/4 md:w-1/2 animate-in flex flex-col justify-center items-center gap-2">
                     <div className="flex flex-col justify-center items-center mb-2 mt-8">
-                        <span className="text-primary font-extrabold text-3xl">{props.formHeaderMessage}</span>
+                        <span className="text-foreground font-extrabold text-3xl">{props.formHeaderMessage}</span>
                     </div>
                     <div className='w-full'>
                         <FormField
@@ -62,7 +61,7 @@ const EmailAuthForm = (props: EmailAuthFormProps) => {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormControl>
-                                        <Input placeholder="Email" {...field} />
+                                        <Input placeholder="Email" className="bg-background border-input" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -80,10 +79,11 @@ const EmailAuthForm = (props: EmailAuthFormProps) => {
                                             <Input
                                                 type={showPassword ? "text" : "password"}
                                                 placeholder="Enter your password"
+                                                className="bg-background border-input"
                                                 {...field}
                                             />
                                             <div
-                                                className='flex flex-row justify-center align-middle items-center w-[30px] h-[30px] cursor-pointer px-[2px]'
+                                                className='flex flex-row justify-center align-middle items-center w-[30px] h-[30px] cursor-pointer px-[2px] text-muted-foreground hover:text-foreground transition-colors'
                                                 onClick={toggleShowPassword}
                                             >
                                                 {showPassword ? eyeSVG : hideEyeSVG}
@@ -96,7 +96,7 @@ const EmailAuthForm = (props: EmailAuthFormProps) => {
                         />
                     </div>
                     <SubmitButton
-                        className="bg-slate-700 rounded-md px-4 py-2 text-primary-foreground mb-2 text-md hover:bg-accent/80 w-full"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md px-4 py-2 mb-2 text-md w-full"
                     >
                         {props.formButtonMessage}
                     </SubmitButton>

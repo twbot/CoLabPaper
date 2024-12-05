@@ -1,77 +1,75 @@
-import { createClient } from "@/supabase/server"
-import { NextRequest, NextResponse } from "next/server"
-import { z } from "zod"
-import { Profile } from "@/types/database.types"
-import { ProfilePOSTSchema } from "@/types/api/profile.types"
-import { TABLE } from "@/constants/database"
+// src/app/api/v1/profile/route.ts
+import { createClient } from '@/utils/supabase/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
-  const supabase = createClient()
-
   try {
+    const supabase = await createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    // Get the profile data
-    const { data, error } = await supabase
-      .from(TABLE.PROFILE)
+    const { data: profile, error } = await supabase
+      .from('profile')
       .select('*')
       .eq('id', user.id)
       .single()
-      .returns<z.infer<typeof Profile>>()
 
-    if (error) {
-      console.error('Error fetching user profile:', error)
-      throw error
-    }
+    if (error) throw error
 
-    // Return the profile data as the API response
-    return NextResponse.json({ data }, { status: 200 })
+    return NextResponse.json({ data: profile })
+
   } catch (error) {
-    // Handle any other errors that occurred during the API request
-    console.error('Error in API route:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
 
-export async function POST(request: NextRequest) {
-  const supabase = createClient()
-
+export async function PUT(request: NextRequest) {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-
-    // Parse the request body
+    const supabase = await createClient()
     const body = await request.json()
 
-    // Validate the request body against the ProfileSetupFormSchema
-    const { first_name, last_name, username, email } = ProfilePOSTSchema.parse(body)
-    
-    // Insert the profile data into the 'profile' table and select the inserted row
-    const { data, error } = await supabase
-      .from(TABLE.PROFILE)
-      .insert([{ id: user.id, first_name, last_name, username, email }])
-      .select()
-      .single()
-      .returns<z.infer<typeof Profile>>()
-
-    if (error) {
-      // Handle any errors that occurred during the insertion
-      console.error("Error inserting profile:", error)
-      return NextResponse.json({ error: "Failed to insert profile" }, { status: 500 })
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Return the inserted profile data as the API response
-    return NextResponse.json({ profile: data }, { status: 201 })
-  } catch (error) {
-    // Handle any validation errors
-    if (error instanceof z.ZodError) {
-        // Type the error as z.ZodError before accessing its issues property
-        const zodError: z.ZodError = error
-        return NextResponse.json({ error: zodError.issues }, { status: 400 })
-      }
+    const { username, first_name, last_name } = body
 
-    // Handle any other errors that occurred during the API request
-    console.error("Error in API route:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    // Validate username length
+    if (username && username.length >= 30) {
+      return NextResponse.json(
+        { error: 'Username must be less than 30 characters' },
+        { status: 400 }
+      )
+    }
+
+    const { data: profile, error } = await supabase
+      .from('profile')
+      .update({
+        username,
+        first_name,
+        last_name
+      })
+      .eq('id', user.id)
+      .select()
+      .single()
+
+    if (error) throw error
+
+    return NextResponse.json({ data: profile })
+
+  } catch (error) {
+    console.error('Error:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
   }
 }

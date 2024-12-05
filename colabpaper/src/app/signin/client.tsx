@@ -10,7 +10,7 @@ import { z } from "zod"
 import { SIGNIN_RETURN_TYPES } from "@/constants"
 
 interface SignInClientProps {
-    searchParams: { status: string; memoryID?: string }
+    searchParams: { status: string; }
     signIn: (values: z.infer<typeof EmailSignInFormSchema>) => Promise<never>
 }
 
@@ -39,7 +39,7 @@ export default function SignInClient({ searchParams, signIn }: SignInClientProps
                 <div className="w-3/4 md:w-1/2 flex flex-row justify-center align-middle items-center my-2">
                     <div>
                         <span className="text-primary text-md">Don&#39;t have an account?</span>
-                        <Link href={searchParams.memoryID ? `/signup?memoryID=${searchParams.memoryID}` : '/signup'} className="text-blue-500 text-sm px-2 cursor-pointer">
+                        <Link href={'/signup'} className="text-primary text-sm px-2 cursor-pointer">
                             Sign Up
                         </Link>
                     </div>

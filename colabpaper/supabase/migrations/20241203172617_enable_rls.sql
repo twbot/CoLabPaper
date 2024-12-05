@@ -1,0 +1,20 @@
+alter table public.profile enable row level security;
+alter table public.project enable row level security;
+alter table public.project_shares enable row level security;
+alter table public.temp_profile enable row level security;
+
+create policy "Only owners can delete projects" on public.project for delete using ((auth.uid() = owner_id));
+create policy "Owners can manage project shares" on public.project_shares using ((exists ( select 1 from public.project where ((project.id = project_shares.project_id) and (project.owner_id = auth.uid())))));
+create policy "Service role can insert profiles" on public.profile for insert to service_role with check (true);
+create policy "Service role has full access to temp profiles" on public.temp_profile to service_role using (true) with check (true);
+create policy "Users can create their own projects" on public.project for insert with check ((auth.uid() = owner_id));
+create policy "Users can create their temp profile" on public.temp_profile for insert to anon with check (true);
+create policy "Users can delete their own profile" on public.profile for delete to authenticated using ((auth.uid() = id));
+create policy "Users can update projects they own or have write/admin access t" on public.project for update using ((auth.uid() = owner_id) or (exists ( select 1 from public.project_shares where ((project_shares.project_id = project.id) and (project_shares.user_id = auth.uid()) and (project_shares.permission_level = any (array['write'::text, 'admin'::text]))))));
+create policy "Users can update their own profile" on public.profile for update to authenticated using ((auth.uid() = id)) with check ((auth.uid() = id));
+create policy "Users can update their temp profile" on public.temp_profile for update to authenticated using (((auth.uid())::text = (user_id)::text)) with check (((auth.uid())::text = (user_id)::text));
+create policy "Users can view shares for projects they have access to" on public.project_shares for select using ((exists ( select 1 from public.project where ((project.id = project_shares.project_id) and ((project.owner_id = auth.uid()) or (exists ( select 1 from public.project_shares ps where ((ps.project_id = project_shares.project_id) and (ps.user_id = auth.uid())))))))));
+create policy "Users can view their own or shared projects" on public.project for select using ((auth.uid() = owner_id) or (exists ( select 1 from public.project_shares where ((project_shares.project_id = project.id) and (project_shares.user_id = auth.uid())))));
+create policy "Users can view their own profile" on public.profile for select to authenticated using ((auth.uid() = id));
+create policy "Users can view their temp profile" on public.temp_profile for select to authenticated using (((auth.uid())::text = (user_id)::text));
+create policy "Users with admin permission can manage shares" on public.project_shares using ((exists ( select 1 from public.project_shares ps where ((ps.project_id = project_shares.project_id) and (ps.user_id = auth.uid()) and (ps.permission_level = 'admin'::text)))));

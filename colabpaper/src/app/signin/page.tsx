@@ -33,7 +33,7 @@ export default function SignInPage(props: SignInPageProps) {
       }
     }
 
-    return redirect(`${origin}/home`)
+    return redirect(`${origin}`)
   }
 
   return <SignInClient searchParams={props.searchParams} signIn={signIn} />
