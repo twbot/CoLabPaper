@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { createClient } from '@/utils/supabase/client';
-import { EDITOR_THEMES } from './editor.constants';
-import { EditorTheme } from './editor.types';
+import { EDITOR_THEMES } from '@/constants';
+import { EditorTheme } from '@/types';
 
 interface ThemeSelectorProps {
     onThemeChange: (theme: EditorTheme) => void;

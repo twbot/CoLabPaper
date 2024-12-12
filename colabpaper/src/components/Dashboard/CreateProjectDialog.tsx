@@ -7,55 +7,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
+import { createClient } from '@/utils/supabase/client';
 interface CreateProjectDialogProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void;
 }
 
 const CreateProjectDialog = (props: CreateProjectDialogProps) => {
-  const [projectName, setProjectName] = React.useState('');
-  const [isCreating, setIsCreating] = React.useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
-  // src/components/Dashboard/CreateProjectDialog.tsx
+  // State
+  const [projectName, setProjectName] = React.useState('');
+  const [isCreating, setIsCreating] = React.useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!projectName.trim()) {
-      toast({
-        title: "Error",
-        description: "Project name is required",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsCreating(true);
+
     try {
-      // Add auth headers
       const response = await fetch(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/projects`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Add this line
-        body: JSON.stringify({
-          name: projectName.trim()
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: projectName.trim() }),
       });
-
-      if (response.status === 401) {
-        // Handle unauthorized explicitly
-        toast({
-          title: "Error",
-          description: "Session expired. Please sign in again.",
-          variant: "destructive",
-        });
-        // Optionally redirect to login
-        window.location.href = '/signin';
-        return;
-      }
 
       if (!response.ok) {
         const error = await response.json();
@@ -63,6 +38,27 @@ const CreateProjectDialog = (props: CreateProjectDialogProps) => {
       }
 
       const { data: project } = await response.json();
+
+      // Create initial LaTeX file
+      const supabase = await createClient();
+      const initialContent = `\\documentclass{article}
+\\usepackage{graphicx} % Required for inserting images
+\\title{${projectName}}
+\\author{${project.owner?.first_name} ${project.owner?.last_name}}
+\\date{${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}}
+\\begin{document}
+\\maketitle
+\\section{Introduction}
+\\end{document}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('project-files')
+        .upload(`${project.id}/tex/main.tex`, initialContent, {
+          contentType: 'text/plain',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
 
       toast({
         title: "Success",

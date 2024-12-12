@@ -10,3 +10,11 @@ export interface LatexFileType {
     category: FileCategory;
     template?: string;
 }
+
+// Types for LaTeX commands
+export interface LatexCommand {
+    command: string;
+    description: string;
+    snippet: string;
+    category?: string;
+}

@@ -7,10 +7,11 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 import { MoreHorizontal, File, Share2, Archive, Trash2 } from 'lucide-react';
-import { useToast } from '../ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { Project } from '@/types/database.types';
+import DeleteProjectDialog from '@/components/Editor/DeleteProjectDialog';
 
 interface ProjectDrawerProps {
     drawerName: string;
@@ -18,13 +19,20 @@ interface ProjectDrawerProps {
 }
 
 const ProjectDrawer: React.FC<ProjectDrawerProps> = ({ drawerName, searchFilter = '' }) => {
-    const [projects, setProjects] = useState<Project[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
     const { toast } = useToast();
 
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
     const fetchProjects = async () => {
         try {
+            const responseHealth = await fetch(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/health`)
+            const healthData = await responseHealth.json()
+
+            console.log(healthData)
             const response = await fetch(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/projects`);
             if (!response.ok) {
                 throw new Error('Failed to fetch projects');
@@ -42,6 +50,34 @@ const ProjectDrawer: React.FC<ProjectDrawerProps> = ({ drawerName, searchFilter 
         }
     };
 
+    const handleDeleteProject = async (projectId: string) => {
+        try {
+            const response = await fetch(
+                `/api/${process.env.NEXT_PUBLIC_API_VERSION}/projects/${projectId}`,
+                { method: 'DELETE' }
+            );
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to delete project');
+            }
+
+            toast({
+                title: "Success",
+                description: "Project deleted successfully",
+            });
+
+            fetchProjects(); // Refresh the list
+        } catch (error) {
+            console.error('Error deleting project:', error);
+            toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "Failed to delete project",
+                variant: "destructive"
+            });
+        }
+    };
+
     useEffect(() => {
         fetchProjects();
     }, []);
@@ -52,7 +88,7 @@ const ProjectDrawer: React.FC<ProjectDrawerProps> = ({ drawerName, searchFilter 
 
     const handleArchiveProject = async (projectId: string) => {
         try {
-            const response = await fetch(`/api/v1/projects/${projectId}`, {
+            const response = await fetch(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/projects/${projectId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -74,29 +110,6 @@ const ProjectDrawer: React.FC<ProjectDrawerProps> = ({ drawerName, searchFilter 
             toast({
                 title: "Error",
                 description: "Failed to archive project",
-                variant: "destructive",
-            });
-        }
-    };
-
-    const handleDeleteProject = async (projectId: string) => {
-        try {
-            const response = await fetch(`/api/v1/projects/${projectId}`, {
-                method: 'DELETE',
-            });
-
-            if (!response.ok) throw new Error('Failed to delete project');
-
-            toast({
-                title: "Success",
-                description: "Project deleted successfully",
-            });
-
-            fetchProjects(); // Refresh the list
-        } catch (error) {
-            toast({
-                title: "Error",
-                description: "Failed to delete project",
                 variant: "destructive",
             });
         }
@@ -173,7 +186,8 @@ const ProjectDrawer: React.FC<ProjectDrawerProps> = ({ drawerName, searchFilter 
                                             className="text-destructive"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleDeleteProject(project.id);
+                                                setProjectToDelete(project);
+                                                setIsDeleteDialogOpen(true);
                                             }}
                                         >
                                             <Trash2 className="h-4 w-4 mr-2" />
@@ -190,6 +204,18 @@ const ProjectDrawer: React.FC<ProjectDrawerProps> = ({ drawerName, searchFilter 
                                 No projects found
                             </TableCell>
                         </TableRow>
+                    )}
+                    {projectToDelete && (
+                        <DeleteProjectDialog
+                            isOpen={isDeleteDialogOpen}
+                            onOpenChange={(open) => {
+                                setIsDeleteDialogOpen(open);
+                                if (!open) setProjectToDelete(null);
+                            }}
+                            projectName={projectToDelete.name}
+                            projectId={projectToDelete.id}
+                            onConfirmDelete={handleDeleteProject}
+                        />
                     )}
                 </TableBody>
             </Table>

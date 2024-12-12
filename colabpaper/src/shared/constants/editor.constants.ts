@@ -1,4 +1,4 @@
-import { EditorTheme } from "./editor.types";
+import { EditorTheme, FolderStructure } from "@/types";
 
 export const EDITOR_THEMES: EditorTheme[] = [
     {
@@ -70,3 +70,39 @@ export const EDITOR_THEMES: EditorTheme[] = [
         }
     }
 ];
+
+export const FOLDER_MAPPING = {
+    'tex': 'tex',
+    'references': 'reference',
+    'assets': 'asset',
+    'classes': 'cls',
+    'styles': 'sty'
+} as const;
+
+export const INITIAL_FOLDERS: FolderStructure = {
+    'tex': {
+        files: [],
+        isOpen: true,
+        label: 'LaTeX Files'
+    },
+    'references': {
+        files: [],
+        isOpen: true,
+        label: 'References'
+    },
+    'assets': {
+        files: [],
+        isOpen: true,
+        label: 'Assets'
+    },
+    'class': {
+        files: [],
+        isOpen: true,
+        label: 'Class Files'
+    },
+    'styles': {
+        files: [],
+        isOpen: true,
+        label: 'Style Files'
+    }
+};

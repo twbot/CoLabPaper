@@ -255,12 +255,12 @@ ALTER TABLE ONLY "public"."project_shares"
 
 
 ALTER TABLE ONLY "public"."project_shares"
-    ADD CONSTRAINT "project_shares_shared_by_fkey" FOREIGN KEY ("shared_by") REFERENCES "auth"."users"("id");
+    ADD CONSTRAINT "project_shares_shared_by_fkey" FOREIGN KEY ("shared_by") REFERENCES "public"."profile"("id");
 
 
 
 ALTER TABLE ONLY "public"."project_shares"
-    ADD CONSTRAINT "project_shares_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "project_shares_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profile"("id") ON DELETE CASCADE;
 
 
 

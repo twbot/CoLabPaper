@@ -29,7 +29,7 @@ export function ProjectProvider({
     const fetchProject = async () => {
         try {
             setIsLoading(true);
-            const response = await fetch(`/api/v1/projects/${projectId}`);
+            const response = await fetch(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/projects/${projectId}`);
             if (!response.ok) throw new Error('Failed to fetch project details');
 
             const { data } = await response.json();

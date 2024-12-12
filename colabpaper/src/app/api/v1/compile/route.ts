@@ -1,17 +1,12 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 
 const LATEX_SERVICE_URL = process.env.LATEX_SERVICE_URL || 'http://localhost:8000'
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-// const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 export async function POST(request: Request) {
     try {
         const body = await request.json()
         const { texContent, projectId, filename } = body
-        console.log(LATEX_SERVICE_URL)
+
         // Call LaTeX service
         const response = await fetch(`${LATEX_SERVICE_URL}/compile`, {
             method: 'POST',

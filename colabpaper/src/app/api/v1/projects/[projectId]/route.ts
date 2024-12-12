@@ -136,26 +136,54 @@ export async function DELETE(
 ) {
   try {
     const supabase = await createClient()
+    const { projectId } = params
 
+    // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { error } = await supabase
+    // First verify project ownership
+    const { data: project, error: projectError } = await supabase
+      .from('project')
+      .select('id, owner_id')
+      .eq('id', projectId)
+      .single()
+
+    if (projectError || !project) {
+      return NextResponse.json(
+        { error: 'Project not found' },
+        { status: 404 }
+      )
+    }
+
+    if (project.owner_id !== user.id) {
+      return NextResponse.json(
+        { error: 'Not authorized to delete this project' },
+        { status: 403 }
+      )
+    }
+
+    // Delete the project record (this will cascade to shares)
+    const { error: deleteProjectError } = await supabase
       .from('project')
       .delete()
-      .eq('id', params.projectId)
-      .eq('owner_id', user.id)
+      .eq('id', projectId)
 
-    if (error) throw error
+    if (deleteProjectError) {
+      return NextResponse.json(
+        { error: 'Failed to delete project record' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({ success: true })
 
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error in project deletion:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

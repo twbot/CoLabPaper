@@ -1,6 +1,5 @@
-// src/hooks/useLatexEditor.ts
 import { useState, useCallback } from 'react';
-import { useImageUpload } from './useImageUpload';
+import { useToast } from '@/components/ui/use-toast';
 
 interface CompilationResult {
     status: string;
@@ -9,39 +8,23 @@ interface CompilationResult {
     storage_type: 'local' | 'supabase';
 }
 
-interface UseLatexEditorProps {
+interface UseLatexCompilerProps {
     projectId: string;
 }
 
-export function useLatexEditor({ projectId }: UseLatexEditorProps) {
+export function useLatexCompiler({ projectId }: UseLatexCompilerProps) {
     const [texContent, setTexContent] = useState<string>('');
     const [isCompiling, setIsCompiling] = useState(false);
     const [compiledPdfUrl, setCompiledPdfUrl] = useState<string | null>(null);
-
-    const handleUploadSuccess = useCallback((image: { file_path: string }) => {
-        const imageLatex = `\\includegraphics{${image.file_path}}\n`;
-        setTexContent(prev => prev + imageLatex);
-    }, []);
-
-    const {
-        uploadedImages,
-        isUploading,
-        error: uploadError,
-        uploadImage,
-    } = useImageUpload({
-        projectId,
-        onUploadSuccess: handleUploadSuccess,
-    });
+    const { toast } = useToast();
 
     const compileLaTeX = useCallback(async (filename: string = 'document.pdf'): Promise<CompilationResult | null> => {
         setIsCompiling(true);
 
         try {
-            const response = await fetch('/api/compile-latex', {
+            const response = await fetch(`/api/${process.env.NEXT_PUBLIC_API_VERSION}/compile`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     texContent,
                     projectId,
@@ -56,15 +39,24 @@ export function useLatexEditor({ projectId }: UseLatexEditorProps) {
 
             const result = await response.json();
             setCompiledPdfUrl(result.url);
+            toast({
+                title: "Success",
+                description: "Document compiled successfully",
+            });
             return result;
-        } catch (err) {
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : 'Compilation failed',
+                variant: "destructive",
+            });
             return null;
         } finally {
             setIsCompiling(false);
         }
-    }, [projectId, texContent]);
+    }, [projectId, texContent, toast]);
 
-    const updateTexContent = useCallback((newContent: string) => {
+    const updateContent = useCallback((newContent: string) => {
         setTexContent(newContent);
     }, []);
 
@@ -75,14 +67,10 @@ export function useLatexEditor({ projectId }: UseLatexEditorProps) {
 
     return {
         texContent,
-        uploadedImages,
-        isUploading,
         isCompiling,
-        error: uploadError,
         compiledPdfUrl,
-        uploadImage,
         compileLaTeX,
-        updateTexContent,
+        updateContent,
         resetState,
     };
 }
